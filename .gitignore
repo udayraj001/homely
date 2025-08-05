@@ -39,3 +39,74 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+
+
+
+
+
+# Er Diagram for this Project
+
+
+
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    email_verified TIMESTAMP NULL,
+    password_hash TEXT, -- Will be NULL for social users
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+Note: password_hash is used only if the user signs up with credentials. Social users won't have a password.
+
+🔸 2. accounts Table (for social providers like Google/GitHub)
+sql
+Copy
+Edit
+CREATE TABLE accounts (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider VARCHAR(255) NOT NULL,
+    provider_account_id VARCHAR(255) NOT NULL,
+    access_token TEXT,
+    refresh_token TEXT,
+    expires_at BIGINT,
+    token_type VARCHAR(100),
+    scope TEXT,
+    UNIQUE(provider, provider_account_id)
+);
+This table links a social account (e.g., Google/GitHub) to a user in the users table.
+
+🔸 3. sessions Table (managed by NextAuth)
+sql
+Copy
+Edit
+CREATE TABLE sessions (
+    id SERIAL PRIMARY KEY,
+    session_token TEXT UNIQUE NOT NULL,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires TIMESTAMP NOT NULL
+);
+🔸 4. verification_tokens Table (optional, for email verification / password reset)
+sql
+Copy
+Edit
+CREATE TABLE verification_tokens (
+    identifier TEXT NOT NULL,
+    token TEXT NOT NULL,
+    expires TIMESTAMP NOT NULL
+);
+✅ Example Scenarios Supported
+Flow Type	Used Tables
+Manual Sign Up	users + password_hash
+Google/GitHub Sign Up	users + accounts
+Session management	sessions
+
+🧠 Extra Tips
+If you're using Prisma, I can give you a matching schema.prisma file.
+
+Use bcrypt on the backend to hash the password before saving it.
+
+If using social sign-in only, password_hash can stay null.
